@@ -62,7 +62,7 @@ function Find-ExcelFile {
 }
 
 # ============================================================
-# STEP 1: Read Excel → Generate data.js
+# STEP 1: Read Excel -> Generate data.js
 # ============================================================
 Write-Host "[1/3] Reading Excel and generating data.js..." -ForegroundColor Yellow
 Write-Host ""
@@ -236,7 +236,7 @@ git add data.js 2>&1 | Out-Null
 
 $gitStatus = git status --porcelain 2>&1
 if ($gitStatus -eq "") {
-    Write-Host "    No changes — data.js is already up to date." -ForegroundColor Gray
+    Write-Host "    No changes -- data.js is already up to date." -ForegroundColor Gray
 } else {
     git commit -m "Dashboard update: $timestamp" 2>&1 | Out-Null
     Write-Host "    [OK] Committed: Dashboard update: $timestamp" -ForegroundColor Green
@@ -263,13 +263,13 @@ if ($LASTEXITCODE -eq 0) {
         Write-Host "  Share this link with your team." -ForegroundColor White
         Write-Host "  Updates are live in ~1-2 minutes." -ForegroundColor Gray
     } else {
-        Write-Host "  Find your URL: GitHub repo > Settings > Pages" -ForegroundColor Yellow
+        Write-Host "  Find your URL: GitHub repo Settings Pages" -ForegroundColor Yellow
     }
 } else {
     Write-Host ""
     Write-Host "[ERROR] Push failed. Possible reasons:" -ForegroundColor Red
     Write-Host "  - Not authenticated with GitHub" -ForegroundColor Yellow
-    Write-Host "  - Remote repo doesn't exist (create at github.com/new)" -ForegroundColor Yellow
+    Write-Host "  - Remote repo does not exist (create at github.com/new)" -ForegroundColor Yellow
     Write-Host "  - Run setup-github-pages.ps1 if not done yet" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "  Push output: $pushResult" -ForegroundColor Gray
