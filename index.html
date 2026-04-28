@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QLI Security Program Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+  <script src="data.js" onerror="console.log('data.js not found, using built-in data')"></script>
+  <style>
+    :root {
+      --bg-primary:#0a0e1a;--bg-secondary:#0f1629;
+      --bg-card:rgba(255,255,255,0.04);--bg-card-hover:rgba(255,255,255,0.07);
+      --border:rgba(255,255,255,0.08);--border-bright:rgba(255,255,255,0.15);
+      --text-primary:#e8eaf6;--text-secondary:#8892b0;--text-muted:#4a5568;
+      --blue:#4f8ef7;--purple:#9b59b6;--cyan:#00d4ff;--green:#00e676;--amber:#ffab40;--red:#ff5252;
+      --g1:linear-gradient(135deg,#667eea,#764ba2);--g2:linear-gradient(135deg,#f093fb,#f5576c);
+      --g3:linear-gradient(135deg,#4facfe,#00f2fe);--g4:linear-gradient(135deg,#43e97b,#38f9d7);
+      --g5:linear-gradient(135deg,#fa709a,#fee140);--g6:linear-gradient(135deg,#a18cd1,#fbc2eb);
+      --shadow:0 8px 32px rgba(0,0,0,0.4);--glow:0 0 30px rgba(79,142,247,0.15);
+    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Inter',sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;overflow-x:hidden;}
+    body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;
+      background:radial-gradient(ellipse at 20% 20%,rgba(79,142,247,0.06) 0%,transparent 50%),
+                 radial-gradient(ellipse at 80% 80%,rgba(155,89,182,0.06) 0%,transparent 50%);
+      pointer-events:none;z-index:0;}
+    .wrap{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:0 24px 48px;}
+
+    /* HEADER */
+    .hdr{background:linear-gradient(135deg,rgba(79,142,247,0.1),rgba(155,89,182,0.1));
+      border-bottom:1px solid var(--border);backdrop-filter:blur(20px);
+      padding:18px 40px;display:flex;align-items:center;justify-content:space-between;
+      position:sticky;top:0;z-index:100;}
+    .hdr-l{display:flex;align-items:center;gap:14px;}
+    .hdr-ico{width:46px;height:46px;background:var(--g1);border-radius:12px;
+      display:flex;align-items:center;justify-content:center;font-size:22px;
+      box-shadow:0 4px 15px rgba(102,126,234,0.4);}
+    .hdr-t h1{font-size:19px;font-weight:700;
+      background:linear-gradient(135deg,#e8eaf6,#4f8ef7);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .hdr-t p{font-size:11px;color:var(--text-secondary);margin-top:2px;}
+    .hdr-r{display:flex;align-items:center;gap:12px;}
+    .badge-upd{font-size:11px;color:var(--text-secondary);background:var(--bg-card);
+      border:1px solid var(--border);padding:5px 12px;border-radius:20px;}
+    .badge-live{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;
+      color:var(--green);background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.3);
+      padding:5px 12px;border-radius:20px;}
+    .live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.8);}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+
+    /* REFRESH BANNER */
+    .refresh-banner{background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.2);
+      border-radius:10px;padding:10px 18px;margin-top:20px;margin-bottom:0;
+      display:flex;align-items:center;justify-content:space-between;font-size:11px;}
+    .refresh-banner span{color:var(--text-secondary);}
+    .refresh-banner strong{color:var(--blue);}
+    .refresh-info{display:flex;align-items:center;gap:8px;}
+    .refresh-info i{color:var(--blue);}
+    .refresh-cmd{font-family:'Courier New',monospace;font-size:10px;
+      background:rgba(79,142,247,0.12);color:var(--cyan);
+      padding:3px 8px;border-radius:5px;border:1px solid rgba(0,212,255,0.2);}
+
+    /* TABS */
+    .tab-bar{display:flex;align-items:center;gap:4px;margin-top:20px;
+      background:var(--bg-card);border:1px solid var(--border);border-radius:14px;
+      padding:5px;overflow-x:auto;}
+    .tab-bar::-webkit-scrollbar{height:3px;}
+    .tab-bar::-webkit-scrollbar-track{background:transparent;}
+    .tab-bar::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px;}
+    .tab-btn{display:flex;align-items:center;gap:7px;padding:9px 18px;border-radius:10px;
+      font-size:12px;font-weight:500;color:var(--text-secondary);cursor:pointer;
+      border:none;background:none;white-space:nowrap;transition:all .2s;flex-shrink:0;}
+    .tab-btn i{font-size:12px;}
+    .tab-btn:hover{color:var(--text-primary);background:rgba(255,255,255,0.05);}
+    .tab-btn.active{background:linear-gradient(135deg,rgba(79,142,247,0.2),rgba(155,89,182,0.15));
+      color:var(--text-primary);border:1px solid rgba(79,142,247,0.3);
+      box-shadow:0 2px 12px rgba(79,142,247,0.15);}
+    .tab-btn.active i{color:var(--blue);}
+    .tab-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;
+      background:rgba(79,142,247,0.15);color:var(--blue);border:1px solid rgba(79,142,247,0.25);}
+
+    /* TAB PANELS */
+    .tab-panel{display:none;animation:fadeUp .3s ease forwards;}
+    .tab-panel.active{display:block;}
+
+    /* SECTION TITLE */
+    .sec-title{font-size:11px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;
+      color:var(--text-secondary);margin-bottom:14px;margin-top:24px;display:flex;align-items:center;gap:10px;}
+    .sec-title::after{content:'';flex:1;height:1px;background:linear-gradient(to right,var(--border),transparent);}
+
+    /* KPI GRID */
+    .kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:28px;}
+    .kpi{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;
+      padding:18px;position:relative;overflow:hidden;transition:all .3s;cursor:default;
+      animation:fadeUp .5s ease forwards;opacity:0;}
+    .kpi:nth-child(1){animation-delay:.05s;} .kpi:nth-child(2){animation-delay:.1s;}
+    .kpi:nth-child(3){animation-delay:.15s;} .kpi:nth-child(4){animation-delay:.2s;}
+    .kpi:nth-child(5){animation-delay:.25s;} .kpi:nth-child(6){animation-delay:.3s;}
+    .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:16px 16px 0 0;}
+    .kpi:nth-child(1)::before{background:var(--g3);} .kpi:nth-child(2)::before{background:var(--g1);}
+    .kpi:nth-child(3)::before{background:var(--g5);} .kpi:nth-child(4)::before{background:var(--g4);}
+    .kpi:nth-child(5)::before{background:var(--g2);} .kpi:nth-child(6)::before{background:var(--g6);}
+    .kpi:hover{background:var(--bg-card-hover);border-color:var(--border-bright);transform:translateY(-3px);box-shadow:var(--shadow);}
+    .kpi-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:12px;}
+    .kpi:nth-child(1) .kpi-ico{background:rgba(0,212,255,0.15);color:var(--cyan);}
+    .kpi:nth-child(2) .kpi-ico{background:rgba(79,142,247,0.15);color:var(--blue);}
+    .kpi:nth-child(3) .kpi-ico{background:rgba(255,171,64,0.15);color:var(--amber);}
+    .kpi:nth-child(4) .kpi-ico{background:rgba(0,230,118,0.15);color:var(--green);}
+    .kpi:nth-child(5) .kpi-ico{background:rgba(255,82,82,0.15);color:var(--red);}
+    .kpi:nth-child(6) .kpi-ico{background:rgba(155,89,182,0.15);color:var(--purple);}
+    .kpi-val{font-size:30px;font-weight:800;line-height:1;margin-bottom:5px;}
+    .kpi:nth-child(1) .kpi-val{color:var(--cyan);} .kpi:nth-child(2) .kpi-val{color:var(--blue);}
+    .kpi:nth-child(3) .kpi-val{color:var(--amber);} .kpi:nth-child(4) .kpi-val{color:var(--green);}
+    .kpi:nth-child(5) .kpi-val{color:var(--red);} .kpi:nth-child(6) .kpi-val{color:var(--purple);}
+    .kpi-lbl{font-size:11px;color:var(--text-secondary);font-weight:500;}
+    .kpi-sub{font-size:10px;color:var(--text-muted);margin-top:7px;padding-top:7px;border-top:1px solid var(--border);}
+
+    /* CHARTS */
+    .charts-grid{display:grid;grid-template-columns:1fr 1.6fr 1.6fr;gap:18px;margin-bottom:28px;}
+    .chart-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;
+      padding:22px;transition:all .3s;animation:fadeUp .5s .2s ease forwards;opacity:0;}
+    .chart-card:hover{border-color:var(--border-bright);box-shadow:var(--glow);}
+    .chart-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+    .chart-ttl{font-size:13px;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:7px;}
+    .chart-ttl i{color:var(--blue);font-size:13px;}
+
+    /* RELEASE CARDS */
+    .rel-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
+    .rel-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;
+      padding:18px;transition:all .3s;animation:fadeUp .5s .3s ease forwards;opacity:0;}
+    .rel-card:hover{background:var(--bg-card-hover);border-color:var(--border-bright);transform:translateY(-2px);}
+    .rel-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;
+      letter-spacing:.5px;padding:3px 9px;border-radius:6px;margin-bottom:12px;}
+    .rel-card:nth-child(1) .rel-badge{background:rgba(79,142,247,0.2);color:#4f8ef7;border:1px solid rgba(79,142,247,0.3);}
+    .rel-card:nth-child(2) .rel-badge{background:rgba(155,89,182,0.2);color:#9b59b6;border:1px solid rgba(155,89,182,0.3);}
+    .rel-card:nth-child(3) .rel-badge{background:rgba(0,212,255,0.2);color:#00d4ff;border:1px solid rgba(0,212,255,0.3);}
+    .rel-card:nth-child(4) .rel-badge{background:rgba(255,171,64,0.2);color:#ffab40;border:1px solid rgba(255,171,64,0.3);}
+    .rel-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+    .rel-stat{text-align:center;}
+    .rel-stat-v{font-size:20px;font-weight:700;}
+    .rel-stat-l{font-size:10px;color:var(--text-secondary);margin-top:2px;}
+    .rel-bar{height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;margin-bottom:6px;}
+    .rel-fill{height:100%;border-radius:3px;}
+    .rel-card:nth-child(1) .rel-fill{background:var(--g3);}
+    .rel-card:nth-child(2) .rel-fill{background:var(--g1);}
+    .rel-card:nth-child(3) .rel-fill{background:var(--g6);}
+    .rel-card:nth-child(4) .rel-fill{background:var(--g5);}
+    .rel-lbl{font-size:10px;color:var(--text-secondary);text-align:right;}
+
+    /* FILTERS */
+    .filters{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+    .f-lbl{font-size:11px;color:var(--text-secondary);font-weight:500;}
+    .f-btn{padding:5px 13px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;
+      border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);transition:all .2s;}
+    .f-btn:hover,.f-btn.active{background:rgba(79,142,247,0.15);border-color:rgba(79,142,247,0.4);color:var(--blue);}
+    .f-sel{padding:5px 13px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;
+      border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);outline:none;}
+    .f-sel:focus{border-color:rgba(79,142,247,0.4);color:var(--text-primary);}
+    .search-box{display:flex;align-items:center;gap:7px;background:var(--bg-card);
+      border:1px solid var(--border);border-radius:20px;padding:5px 13px;margin-left:auto;}
+    .search-box i{color:var(--text-muted);font-size:11px;}
+    .search-box input{background:none;border:none;outline:none;color:var(--text-primary);font-size:11px;width:170px;}
+    .search-box input::placeholder{color:var(--text-muted);}
+
+    /* TABLE */
+    .tbl-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;
+      overflow:hidden;margin-bottom:28px;animation:fadeUp .5s .35s ease forwards;opacity:0;}
+    .tbl-hdr{padding:18px 22px;border-bottom:1px solid var(--border);
+      display:flex;align-items:center;justify-content:space-between;}
+    .tbl-ttl{font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;}
+    .tbl-ttl i{color:var(--blue);}
+    .tbl-cnt{font-size:10px;color:var(--text-secondary);background:rgba(79,142,247,0.1);
+      border:1px solid rgba(79,142,247,0.2);padding:3px 9px;border-radius:10px;}
+    table{width:100%;border-collapse:collapse;}
+    thead tr{background:rgba(255,255,255,0.03);border-bottom:1px solid var(--border);}
+    th{padding:11px 14px;font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;
+      color:var(--text-secondary);text-align:left;white-space:nowrap;}
+    tbody tr{border-bottom:1px solid rgba(255,255,255,0.04);transition:background .2s;}
+    tbody tr:hover{background:rgba(255,255,255,0.04);}
+    tbody tr:last-child{border-bottom:none;}
+    td{padding:13px 14px;font-size:12px;color:var(--text-primary);vertical-align:middle;}
+    .tid{font-family:'Courier New',monospace;font-size:10px;font-weight:600;color:var(--cyan);
+      background:rgba(0,212,255,0.08);padding:3px 7px;border-radius:5px;white-space:nowrap;}
+    .tname{font-weight:500;max-width:260px;line-height:1.4;}
+    .cat-badge{font-size:9px;font-weight:600;letter-spacing:.3px;padding:3px 7px;border-radius:5px;white-space:nowrap;}
+    .cat-s{background:rgba(79,142,247,0.15);color:#4f8ef7;border:1px solid rgba(79,142,247,0.25);}
+    .cat-g{background:rgba(155,89,182,0.15);color:#9b59b6;border:1px solid rgba(155,89,182,0.25);}
+    .cat-gov{background:rgba(0,212,255,0.15);color:#00d4ff;border:1px solid rgba(0,212,255,0.25);}
+    .cat-t{background:rgba(255,171,64,0.15);color:#ffab40;border:1px solid rgba(255,171,64,0.25);}
+    .cat-p{background:rgba(0,230,118,0.15);color:#00e676;border:1px solid rgba(0,230,118,0.25);}
+    .st-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;
+      padding:3px 9px;border-radius:20px;white-space:nowrap;}
+    .st-dot{width:5px;height:5px;border-radius:50%;}
+    .st-ip{background:rgba(79,142,247,0.15);color:#4f8ef7;border:1px solid rgba(79,142,247,0.3);}
+    .st-ip .st-dot{background:#4f8ef7;animation:pulse 2s infinite;}
+    .st-is{background:rgba(255,171,64,0.15);color:#ffab40;border:1px solid rgba(255,171,64,0.3);}
+    .st-is .st-dot{background:#ffab40;}
+    .st-ns{background:rgba(255,255,255,0.06);color:var(--text-secondary);border:1px solid var(--border);}
+    .st-ns .st-dot{background:var(--text-muted);}
+    .st-done{background:rgba(0,230,118,0.15);color:#00e676;border:1px solid rgba(0,230,118,0.3);}
+    .st-done .st-dot{background:#00e676;}
+    .st-blk{background:rgba(255,82,82,0.15);color:#ff5252;border:1px solid rgba(255,82,82,0.3);}
+    .st-blk .st-dot{background:#ff5252;animation:pulse 1s infinite;}
+    .rag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:5px;}
+    .rag-g{background:rgba(0,230,118,0.12);color:#00e676;border:1px solid rgba(0,230,118,0.25);}
+    .rag-a{background:rgba(255,171,64,0.12);color:#ffab40;border:1px solid rgba(255,171,64,0.25);}
+    .rag-r{background:rgba(255,82,82,0.12);color:#ff5252;border:1px solid rgba(255,82,82,0.25);}
+    .prog-wrap{display:flex;align-items:center;gap:7px;min-width:110px;}
+    .prog-bar{flex:1;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;}
+    .prog-fill{height:100%;border-radius:2px;}
+    .prog-pct{font-size:10px;font-weight:600;color:var(--text-secondary);min-width:28px;text-align:right;}
+    .rel-tag{font-size:10px;font-weight:600;padding:3px 7px;border-radius:5px;
+      background:rgba(255,255,255,0.06);color:var(--text-secondary);border:1px solid var(--border);}
+    .owner-t{font-size:11px;color:var(--text-secondary);max-width:150px;}
+    .eta-t{font-size:11px;color:var(--text-secondary);white-space:nowrap;}
+    .risk-wrap{position:relative;display:inline-block;}
+    .risk-ico{color:var(--amber);font-size:12px;cursor:pointer;}
+    .tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+      background:#1a2035;border:1px solid var(--border-bright);color:var(--text-primary);
+      font-size:10px;padding:8px 11px;border-radius:8px;width:210px;z-index:999;
+      display:none;pointer-events:none;box-shadow:var(--shadow);line-height:1.5;}
+    .risk-wrap:hover .tip{display:block;}
+
+    /* BACKLOG */
+    .bl-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;
+      overflow:hidden;margin-bottom:28px;animation:fadeUp .5s .4s ease forwards;opacity:0;}
+    .bl-hdr{padding:18px 22px;border-bottom:1px solid var(--border);
+      display:flex;align-items:center;justify-content:space-between;background:rgba(255,171,64,0.04);}
+    .bl-ttl{font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;color:var(--amber);}
+    .bl-row{padding:14px 22px;border-bottom:1px solid rgba(255,255,255,0.04);
+      display:grid;grid-template-columns:110px 1fr 130px 110px 1fr;gap:14px;align-items:center;transition:background .2s;}
+    .bl-row:hover{background:rgba(255,255,255,0.03);}
+    .bl-row:last-child{border-bottom:none;}
+    .scope-need{font-size:9px;font-weight:600;padding:3px 7px;border-radius:5px;
+      background:rgba(255,171,64,0.12);color:#ffab40;border:1px solid rgba(255,171,64,0.25);}
+    .scope-np{font-size:9px;font-weight:600;padding:3px 7px;border-radius:5px;
+      background:rgba(255,82,82,0.12);color:#ff5252;border:1px solid rgba(255,82,82,0.25);}
+
+    /* FOOTER */
+    .footer{text-align:center;padding:22px;color:var(--text-muted);font-size:11px;border-top:1px solid var(--border);}
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar{width:5px;height:5px;}
+    ::-webkit-scrollbar-track{background:var(--bg-primary);}
+    ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:3px;}
+    ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.2);}
+
+    /* RESPONSIVE */
+    @media(max-width:1200px){
+      .kpi-grid{grid-template-columns:repeat(3,1fr);}
+      .charts-grid{grid-template-columns:1fr 1fr;}
+      .rel-grid{grid-template-columns:repeat(2,1fr);}
+    }
+    @media(max-width:768px){
+      .kpi-grid{grid-template-columns:repeat(2,1fr);}
+      .charts-grid{grid-template-columns:1fr;}
+      .rel-grid{grid-template-columns:1fr 1fr;}
+      .hdr{padding:14px 18px;}
+      .hdr-r{display:none;}
+      .tab-btn span.tab-label{display:none;}
+    }
+  </style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-l">
+    <div class="hdr-ico">&#128737;</div>
+    <div class="hdr-t">
+      <h1>QLI Security Program Dashboard</h1>
+      <p>Program Manager View &nbsp;&middot;&nbsp; AutoRAG Override &nbsp;&middot;&nbsp; Backlog Tracking</p>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="badge-upd"><i class="fas fa-clock" style="margin-right:5px;color:#4f8ef7"></i><span id="lastUpdatedLabel">Last Updated: 11-Mar-2026</span></div>
+    <div class="badge-live"><div class="live-dot"></div>LIVE</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- REFRESH BANNER -->
+  <div class="refresh-banner">
+    <div class="refresh-info">
+      <i class="fas fa-sync-alt"></i>
+      <span>To sync with Excel: run <span class="refresh-cmd">refresh-data.ps1</span> then refresh this page &nbsp;&middot;&nbsp; <strong id="dataSourceLabel">Using built-in data</strong></span>
+    </div>
+    <span id="refreshedAt" style="color:var(--text-muted);font-size:10px;"></span>
+  </div>
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('tasks',this)">
+      <i class="fas fa-list-check"></i>
+      <span class="tab-label">Active Task Tracker</span>
+      <span class="tab-badge" id="tabBadgeTasks">—</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('releases',this)">
+      <i class="fas fa-code-branch"></i>
+      <span class="tab-label">Release Breakdown</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('metrics',this)">
+      <i class="fas fa-chart-bar"></i>
+      <span class="tab-label">Key Metrics</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('analytics',this)">
+      <i class="fas fa-chart-pie"></i>
+      <span class="tab-label">Analytics</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('backlog',this)">
+      <i class="fas fa-inbox"></i>
+      <span class="tab-label">Backlog</span>
+      <span class="tab-badge" id="tabBadgeBacklog" style="background:rgba(255,171,64,0.15);color:#ffab40;border-color:rgba(255,171,64,0.3);">—</span>
+    </button>
+  </div>
+
+  <!-- TAB: ACTIVE TASK TRACKER -->
+  <div class="tab-panel active" id="panel-tasks">
+    <div class="sec-title"><i class="fas fa-list-check" style="color:#00e676"></i> Active Task Tracker</div>
+    <div class="filters">
+      <span class="f-lbl">Filter:</span>
+      <button class="f-btn active" onclick="filterStatus('all',this)">All</button>
+      <button class="f-btn" onclick="filterStatus('In Progress',this)">In Progress</button>
+      <button class="f-btn" onclick="filterStatus('In scoping',this)">In Scoping</button>
+      <button class="f-btn" onclick="filterStatus('Not Started',this)">Not Started</button>
+      <button class="f-btn" onclick="filterStatus('Completed',this)">Completed</button>
+      <select class="f-sel" id="relSel" onchange="filterRelease(this.value)">
+        <option value="all">All Releases</option>
+      </select>
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Search tasks, owners..." id="srch" oninput="doSearch(this.value)"/>
+      </div>
+    </div>
+    <div class="tbl-card">
+      <div class="tbl-hdr">
+        <div class="tbl-ttl"><i class="fas fa-shield-alt"></i> QLI Security Tasks</div>
+        <span class="tbl-cnt" id="cntLbl">— tasks</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Task ID</th>
+              <th>Task Name</th>
+              <th>Category</th>
+              <th>Owner</th>
+              <th>Release</th>
+              <th>Planned ETA</th>
+              <th>Status</th>
+              <th>RAG</th>
+              <th>Progress</th>
+              <th>Risk / Gap</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: RELEASE BREAKDOWN -->
+  <div class="tab-panel" id="panel-releases">
+    <div class="sec-title"><i class="fas fa-code-branch" style="color:#00d4ff"></i> Release Breakdown</div>
+    <div class="rel-grid" id="relGrid"></div>
+  </div>
+
+  <!-- TAB: KEY METRICS -->
+  <div class="tab-panel" id="panel-metrics">
+    <div class="sec-title"><i class="fas fa-chart-bar" style="color:#4f8ef7"></i> Key Metrics</div>
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-ico"><i class="fas fa-tasks"></i></div>
+        <div class="kpi-val" id="kTotal">—</div>
+        <div class="kpi-lbl">Total Active Tasks</div>
+        <div class="kpi-sub" id="kBacklog">+ — in backlog</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-ico"><i class="fas fa-spinner"></i></div>
+        <div class="kpi-val" id="kInProgress">—</div>
+        <div class="kpi-lbl">In Progress</div>
+        <div class="kpi-sub" id="kInProgressPct">—% of active tasks</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-ico"><i class="fas fa-search"></i></div>
+        <div class="kpi-val" id="kInScoping">—</div>
+        <div class="kpi-lbl">In Scoping</div>
+        <div class="kpi-sub" id="kInScopingPct">—% of active tasks</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-ico"><i class="fas fa-check-circle"></i></div>
+        <div class="kpi-val" id="kCompleted">—</div>
+        <div class="kpi-lbl">Completed</div>
+        <div class="kpi-sub" id="kCompletedPct">—% completion rate</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-ico"><i class="fas fa-pause-circle"></i></div>
+        <div class="kpi-val" id="kNotStarted">—</div>
+        <div class="kpi-lbl">Not Started</div>
+        <div class="kpi-sub" id="kNotStartedPct">—% of active tasks</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-ico"><i class="fas fa-percentage"></i></div>
+        <div class="kpi-val" id="kAvg">—</div>
+        <div class="kpi-lbl">Avg. Progress</div>
+        <div class="kpi-sub">Across all active tasks</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: ANALYTICS -->
+  <div class="tab-panel" id="panel-analytics">
+    <div class="sec-title"><i class="fas fa-chart-pie" style="color:#9b59b6"></i> Analytics</div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-hdr">
+          <div class="chart-ttl"><i class="fas fa-circle-notch"></i> Status Distribution</div>
+        </div>
+        <div style="height:210px;display:flex;align-items:center;justify-content:center;">
+          <canvas id="statusChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-hdr">
+          <div class="chart-ttl"><i class="fas fa-layer-group"></i> Tasks by Category</div>
+        </div>
+        <div style="height:210px;">
+          <canvas id="categoryChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-hdr">
+          <div class="chart-ttl"><i class="fas fa-rocket"></i> Progress by Release</div>
+        </div>
+        <div style="height:210px;">
+          <canvas id="releaseChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: BACKLOG -->
+  <div class="tab-panel" id="panel-backlog">
+    <div class="sec-title"><i class="fas fa-inbox" style="color:#ffab40"></i> Backlog</div>
+    <div class="bl-card">
+      <div class="bl-hdr">
+        <div class="bl-ttl"><i class="fas fa-archive"></i> Backlog Items (<span id="blCount">—</span>)</div>
+        <span style="font-size:10px;color:var(--text-secondary)">Items pending scoping or planning</span>
+      </div>
+      <div id="blBody"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer" id="footerText">QLI Security Program Dashboard &nbsp;&middot;&nbsp; Program Manager View</div>
+
+<script>
+// =============================================
+// BUILT-IN FALLBACK DATA
+// =============================================
+var builtInTasks = [
+  {id:'QLI-SEC-01',name:'Semgrep scan on non kernel QC hosted public projects',cat:'Scanning/Tooling',owner:'Neeraj/Mark/Vishal and Ranjana',rel:'2',eta:'01-Jun-2026',revEta:'',status:'In Progress',rag:'Green',pct:50,risk:'',nextStep:'',updated:'11-Mar-2026'},
+  {id:'QLI-SEC-02',name:'Smatch scan on Qcom next kernel PR',cat:'Scanning/Tooling',owner:'Vishal kumar and Madhukar',rel:'2.1',eta:'01-Sep-2026',revEta:'',status:'In Progress',rag:'Green',pct:50,risk:'Smatch needs compilation as per Madhukar',nextStep:'',updated:'11-Mar-2026'},
+  {id:'QLI-SEC-03',name:'CVE Scan on Non kernel QC hosted projects (PR Review)',cat:'Scanning/Tooling',owner:'Abhijit, Sameesh and Kiron',rel:'2.1',eta:'01-Sep-2026',revEta:'',status:'In scoping',rag:'Green',pct:10,risk:'',nextStep:'',updated:'11-Mar-2026'},
+  {id:'QLI-SEC-04',name:'CVE Scan on Qcom next kernel project (PR Review)',cat:'Scanning/Tooling',owner:'Abhijit, Sameesh and Kiron',rel:'2.1',eta:'01-Sep-2026',revEta:'',status:'In scoping',rag:'Green',pct:10,risk:'',nextStep:'',updated:'11-Mar-2026'},
+  {id:'QLI-SEC-05',name:'Monthly CVE Scan on QLI 2.0 project',cat:'Scanning/Tooling',owner:'Abhijit and Kiron',rel:'2.2',eta:'01-Dec-2026',revEta:'',status:'Not Started',rag:'Green',pct:0,risk:'Resource concerns in QTVMS team to support QLI integration',nextStep:'',updated:'11-Mar-2026'},
+  {id:'QLI-SEC-06',name:'Blacklisting on proprietary code (HLOS + NHLOS)',cat:'General',owner:'Srikanth, Sayan and Vishal',rel:'2.1',eta:'01-Sep-2026',revEta:'',status:'In Progress',rag:'Green',pct:50,risk:'AU labelling required for Blacklisting. Depends on QSWAT team for enabling AU labels for QLI builds',nextStep:'',updated:'11-Mar-2026'},
+  {id:'QLI-SEC-07',name:'Weekly Klockworks scan on QLI mainline',cat:'Scanning/Tooling',owner:'Madhukar and Vishal',rel:'2.1',eta:'01-Sep-2026',revEta:'',status:'In Progress',rag:'Green',pct:50,risk:'',nextStep:'',updated:'11-Mar-2026'},
+  {id:'QLI-SEC-11',name:'Dependency confusion scanner for OSS tools (PR review)',cat:'Scanning/Tooling',owner:'Sriram and Neeraj',rel:'2.2',eta:'01-Dec-2026',revEta:'',status:'In scoping',rag:'Green',pct:10,risk:'Dependency confusion scanner needs to be made public. Currently internal only',nextStep:'',updated:'11-Mar-2026'},
+  {id:'QLI-SEC-12',name:'Central dashboard for security governance',cat:'Governance',owner:'Thomas/Mark and Ranjana',rel:'2.1',eta:'01-Sep-2026',revEta:'',status:'In scoping',rag:'Green',pct:10,risk:'No Dashboard and governance exist today for OSS security',nextStep:'',updated:'11-Mar-2026'},
+  {id:'QLI-SEC-13',name:'Security Training',cat:'Training',owner:'Ranjana and Sameesh',rel:'2',eta:'01-Jun-2026',revEta:'',status:'In Progress',rag:'Green',pct:50,risk:'',nextStep:'',updated:'11-Mar-2026'},
+  {id:'QLI-SEC-14',name:'Vulnerability management and exception workflow',cat:'Process/Compliance',owner:'Sameesh and Ranjana',rel:'2',eta:'01-Jun-2026',revEta:'',status:'In Progress',rag:'Green',pct:50,risk:'Resource concerns in QPSI VM for vulnerability management',nextStep:'',updated:'11-Mar-2026'}
+];
+
+var builtInBacklog = [
+  {id:'QLI-SEC-08',name:'Blacklisting for QC managed OSS project in Github',cat:'General',owner:'Srikanth',scope:'Need to scope',risk:'No BL support for Github projects. Need to develop the capability from scratch',updated:'11-Mar-2026'},
+  {id:'QLI-SEC-09',name:'Add new semgrep rules for PR review',cat:'Scanning/Tooling',owner:'Madhukar',scope:'Need to scope',risk:'',updated:'11-Mar-2026'},
+  {id:'QLI-SEC-10',name:'3rd party Dependency Management for OSS tools',cat:'Scanning/Tooling',owner:'Igibek and Neeraj',scope:'Need to scope',risk:'Dependabot creates lot of noise. Need to reduce noise. Prototyping required',updated:'11-Mar-2026'},
+  {id:'QLI-SEC-15',name:'Expanding OSS CVE management into other linux distributions (Ubuntu, Fedora, centOS)',cat:'Scanning/Tooling',owner:'Sameesh',scope:'Not planned',risk:'Resource concerns in QPSI VM for managing multiple distributions. Scope is big',updated:'11-Mar-2026'},
+  {id:'QLI-SEC-16',name:'Vulnerability management CRA compliance',cat:'Process/Compliance',owner:'Sameesh and Ranjana',scope:'Not planned',risk:'Working with PDMs. Requirements not yet clear. PDMs working with legal for clarity',updated:'11-Mar-2026'}
+];
+
+var activeTasks   = (typeof tasks   !== 'undefined') ? tasks   : builtInTasks;
+var activeBacklog = (typeof backlog !== 'undefined') ? backlog : builtInBacklog;
+var dataSource    = (typeof tasks   !== 'undefined') ? 'Live from Excel (data.js)' : 'Built-in data';
+
+document.getElementById('dataSourceLabel').textContent = dataSource;
+if (typeof lastRefreshed !== 'undefined') {
+  document.getElementById('refreshedAt').textContent = 'Refreshed: ' + lastRefreshed;
+  document.getElementById('lastUpdatedLabel').textContent = 'Last Updated: ' + lastRefreshed;
+}
+
+// =============================================
+// TAB SWITCHING
+// =============================================
+var chartsInitialized = false;
+
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('panel-' + tabId).classList.add('active');
+  if (tabId === 'analytics' && !chartsInitialized) {
+    initCharts();
+    chartsInitialized = true;
+  }
+}
+
+// =============================================
+// HELPERS
+// =============================================
+function catClass(c){
+  if(c.includes('Scanning')) return 'cat-s';
+  if(c==='General') return 'cat-g';
+  if(c==='Governance') return 'cat-gov';
+  if(c==='Training') return 'cat-t';
+  if(c.includes('Process')) return 'cat-p';
+  return 'cat-g';
+}
+function stClass(s){
+  if(s==='In Progress') return 'st-ip';
+  if(s==='In scoping') return 'st-is';
+  if(s==='Not Started') return 'st-ns';
+  if(s==='Completed') return 'st-done';
+  if(s==='Blocked') return 'st-blk';
+  return 'st-ns';
+}
+function pColor(p){
+  if(p===0) return '#4a5568';
+  if(p<=10) return '#ffab40';
+  if(p<=50) return '#4f8ef7';
+  return '#00e676';
+}
+
+// =============================================
+// KPI COMPUTATION
+// =============================================
+function computeKPIs(){
+  var total = activeTasks.length;
+  var inProg = activeTasks.filter(function(t){return t.status==='In Progress';}).length;
+  var inScope = activeTasks.filter(function(t){return t.status==='In scoping';}).length;
+  var done = activeTasks.filter(function(t){return t.status==='Completed';}).length;
+  var notStart = activeTasks.filter(function(t){return t.status==='Not Started';}).length;
+  var avgPct = total>0 ? Math.round(activeTasks.reduce(function(s,t){return s+t.pct;},0)/total) : 0;
+
+  document.getElementById('kTotal').textContent = total;
+  document.getElementById('kBacklog').textContent = '+ '+activeBacklog.length+' in backlog';
+  document.getElementById('kInProgress').textContent = inProg;
+  document.getElementById('kInProgressPct').textContent = Math.round(inProg/total*100)+'% of active tasks';
+  document.getElementById('kInScoping').textContent = inScope;
+  document.getElementById('kInScopingPct').textContent = Math.round(inScope/total*100)+'% of active tasks';
+  document.getElementById('kCompleted').textContent = done;
+  document.getElementById('kCompletedPct').textContent = Math.round(done/total*100)+'% completion rate';
+  document.getElementById('kNotStarted').textContent = notStart;
+  document.getElementById('kNotStartedPct').textContent = Math.round(notStart/total*100)+'% of active tasks';
+  document.getElementById('kAvg').textContent = avgPct+'%';
+  document.getElementById('blCount').textContent = activeBacklog.length;
+  document.getElementById('tabBadgeTasks').textContent = total;
+  document.getElementById('tabBadgeBacklog').textContent = activeBacklog.length;
+  document.getElementById('footerText').innerHTML = 'QLI Security Program Dashboard &nbsp;&middot;&nbsp; Program Manager View &nbsp;&middot;&nbsp; '+total+' Active Tasks &nbsp;&middot;&nbsp; '+activeBacklog.length+' Backlog Items';
+}
+
+// =============================================
+// RELEASE BREAKDOWN CARDS
+// =============================================
+function buildReleaseCards(){
+  var releases = {};
+  activeTasks.forEach(function(t){
+    if(!releases[t.rel]) releases[t.rel] = {total:0,inProg:0,inScope:0,done:0,notStart:0,pctSum:0};
+    releases[t.rel].total++;
+    releases[t.rel].pctSum += t.pct;
+    if(t.status==='In Progress') releases[t.rel].inProg++;
+    if(t.status==='In scoping') releases[t.rel].inScope++;
+    if(t.status==='Completed') releases[t.rel].done++;
+    if(t.status==='Not Started') releases[t.rel].notStart++;
+  });
+
+  var etaMap = {'2':'Jun 2026','2.1':'Sep 2026','2.2':'Dec 2026'};
+  var icons = ['&#128640;','&#9889;','&#128302;','&#128203;'];
+  var colors = ['#4f8ef7','#9b59b6','#00d4ff','#ffab40'];
+  var grid = document.getElementById('relGrid');
+  grid.innerHTML = '';
+
+  var sel = document.getElementById('relSel');
+  sel.innerHTML = '<option value="all">All Releases</option>';
+
+  var relKeys = Object.keys(releases).sort();
+  relKeys.forEach(function(rel, i){
+    var d = releases[rel];
+    var avg = Math.round(d.pctSum/d.total);
+    var eta = etaMap[rel] || 'TBD';
+    var color = colors[i % colors.length];
+    var icon = icons[i % icons.length];
+    var statusLabel = d.inProg > 0 ? d.inProg+' In Progress' : (d.inScope > 0 ? d.inScope+' In Scoping' : d.notStart+' Not Started');
+
+    var card = document.createElement('div');
+    card.className = 'rel-card';
+    card.innerHTML = '<div class="rel-badge">'+icon+' RELEASE '+rel+'</div>'
+      +'<div class="rel-stats">'
+      +'<div class="rel-stat"><div class="rel-stat-v" style="color:'+color+'">'+d.total+'</div><div class="rel-stat-l">Total Tasks</div></div>'
+      +'<div class="rel-stat"><div class="rel-stat-v" style="color:'+color+'">'+statusLabel+'</div><div class="rel-stat-l">Status</div></div>'
+      +'</div>'
+      +'<div class="rel-bar"><div class="rel-fill" style="width:'+avg+'%;background:'+color+'"></div></div>'
+      +'<div class="rel-lbl">Avg '+avg+'% &nbsp;&middot;&nbsp; ETA '+eta+'</div>';
+    grid.appendChild(card);
+
+    var opt = document.createElement('option');
+    opt.value = rel;
+    opt.textContent = 'Release '+rel;
+    sel.appendChild(opt);
+  });
+
+  var blCard = document.createElement('div');
+  blCard.className = 'rel-card';
+  blCard.innerHTML = '<div class="rel-badge">&#128203; BACKLOG</div>'
+    +'<div class="rel-stats">'
+    +'<div class="rel-stat"><div class="rel-stat-v" style="color:#ffab40">'+activeBacklog.length+'</div><div class="rel-stat-l">Total Items</div></div>'
+    +'<div class="rel-stat"><div class="rel-stat-v" style="color:#ffab40">'+activeBacklog.length+'</div><div class="rel-stat-l">Not Started</div></div>'
+    +'</div>'
+    +'<div class="rel-bar"><div class="rel-fill" style="width:0%;background:#ffab40"></div></div>'
+    +'<div class="rel-lbl">Avg 0% &nbsp;&middot;&nbsp; TBD</div>';
+  grid.appendChild(blCard);
+}
+
+// =============================================
+// TABLE
+// =============================================
+var curStatus='all', curRel='all', curSearch='';
+
+function renderTable(data){
+  var tb=document.getElementById('tbody');
+  tb.innerHTML='';
+  data.forEach(function(t){
+    var riskHtml = t.risk
+      ? '<div class="risk-wrap"><span class="risk-ico"><i class="fas fa-exclamation-triangle"></i></span><div class="tip">'+t.risk+'</div></div>'
+      : '<span style="color:var(--text-muted);font-size:10px">&mdash;</span>';
+    var tr=document.createElement('tr');
+    var ragKey = t.rag ? t.rag.toLowerCase().charAt(0) : 'g';
+    tr.innerHTML='<td><span class="tid">'+t.id+'</span></td>'
+      +'<td><div class="tname">'+t.name+'</div></td>'
+      +'<td><span class="cat-badge '+catClass(t.cat)+'">'+t.cat+'</span></td>'
+      +'<td><div class="owner-t">'+t.owner+'</div></td>'
+      +'<td><span class="rel-tag">v'+t.rel+'</span></td>'
+      +'<td><div class="eta-t">'+(t.revEta||t.eta)+'</div></td>'
+      +'<td><span class="st-badge '+stClass(t.status)+'"><span class="st-dot"></span>'+t.status+'</span></td>'
+      +'<td><span class="rag rag-'+ragKey+'">&#9679; '+t.rag+'</span></td>'
+      +'<td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:'+t.pct+'%;background:'+pColor(t.pct)+'"></div></div><span class="prog-pct">'+t.pct+'%</span></div></td>'
+      +'<td>'+riskHtml+'</td>';
+    tb.appendChild(tr);
+  });
+  document.getElementById('cntLbl').textContent=data.length+' task'+(data.length!==1?'s':'');
+}
+
+function getFiltered(){
+  return activeTasks.filter(function(t){
+    var sm=curStatus==='all'||t.status===curStatus;
+    var rm=curRel==='all'||t.rel===curRel;
+    var q=curSearch;
+    var km=q===''||t.name.toLowerCase().includes(q)||t.id.toLowerCase().includes(q)||t.owner.toLowerCase().includes(q);
+    return sm&&rm&&km;
+  });
+}
+
+function filterStatus(s,btn){
+  curStatus=s;
+  document.querySelectorAll('.f-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  renderTable(getFiltered());
+}
+function filterRelease(v){curRel=v;renderTable(getFiltered());}
+function doSearch(v){curSearch=v.toLowerCase();renderTable(getFiltered());}
+
+// =============================================
+// BACKLOG
+// =============================================
+function renderBacklog(){
+  var c=document.getElementById('blBody');
+  c.innerHTML='';
+  activeBacklog.forEach(function(item){
+    var sc=item.scope==='Need to scope'?'scope-need':'scope-np';
+    var riskHtml=item.risk
+      ?'<div class="risk-wrap"><span class="risk-ico"><i class="fas fa-exclamation-triangle"></i></span><div class="tip">'+item.risk+'</div></div>'
+      :'<span style="color:var(--text-muted);font-size:10px">&mdash;</span>';
+    var d=document.createElement('div');
+    d.className='bl-row';
+    d.innerHTML='<span class="tid">'+item.id+'</span>'
+      +'<div class="tname">'+item.name+'</div>'
+      +'<span class="cat-badge '+catClass(item.cat)+'">'+item.cat+'</span>'
+      +'<div class="owner-t">'+item.owner+'</div>'
+      +'<div style="display:flex;align-items:center;gap:10px;"><span class="'+sc+'">'+item.scope+'</span>'+riskHtml+'</div>';
+    c.appendChild(d);
+  });
+}
+
+// =============================================
+// CHARTS
+// =============================================
+var statusChartInst=null, catChartInst=null, relChartInst=null;
+
+function initCharts(){
+  Chart.defaults.color='#8892b0';
+  Chart.defaults.font={family:'Inter',size:11};
+
+  var inProg = activeTasks.filter(function(t){return t.status==='In Progress';}).length;
+  var inScope = activeTasks.filter(function(t){return t.status==='In scoping';}).length;
+  var notStart = activeTasks.filter(function(t){return t.status==='Not Started';}).length;
+  var done = activeTasks.filter(function(t){return t.status==='Completed';}).length;
+  var blocked = activeTasks.filter(function(t){return t.status==='Blocked';}).length;
+
+  var statusLabels=[],statusData=[],statusColors=[],statusBorders=[];
+  if(inProg>0){statusLabels.push('In Progress');statusData.push(inProg);statusColors.push('rgba(79,142,247,0.8)');statusBorders.push('#4f8ef7');}
+  if(inScope>0){statusLabels.push('In Scoping');statusData.push(inScope);statusColors.push('rgba(255,171,64,0.8)');statusBorders.push('#ffab40');}
+  if(notStart>0){statusLabels.push('Not Started');statusData.push(notStart);statusColors.push('rgba(74,85,104,0.8)');statusBorders.push('#4a5568');}
+  if(done>0){statusLabels.push('Completed');statusData.push(done);statusColors.push('rgba(0,230,118,0.8)');statusBorders.push('#00e676');}
+  if(blocked>0){statusLabels.push('Blocked');statusData.push(blocked);statusColors.push('rgba(255,82,82,0.8)');statusBorders.push('#ff5252');}
+
+  if(statusChartInst) statusChartInst.destroy();
+  statusChartInst = new Chart(document.getElementById('statusChart'),{
+    type:'doughnut',
+    data:{labels:statusLabels,datasets:[{data:statusData,backgroundColor:statusColors,borderColor:statusBorders,borderWidth:2,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',
+      plugins:{legend:{position:'bottom',labels:{padding:14,boxWidth:10,font:{size:10}}},
+        tooltip:{callbacks:{label:function(c){return ' '+c.label+': '+c.raw+' tasks';}}}}}
+  });
+
+  var catMap={};
+  activeTasks.forEach(function(t){catMap[t.cat]=(catMap[t.cat]||0)+1;});
+  var catLabels=Object.keys(catMap);
+  var catData=catLabels.map(function(k){return catMap[k];});
+  var catColors=['rgba(79,142,247,0.7)','rgba(155,89,182,0.7)','rgba(0,212,255,0.7)','rgba(255,171,64,0.7)','rgba(0,230,118,0.7)'];
+  var catBorders=['#4f8ef7','#9b59b6','#00d4ff','#ffab40','#00e676'];
+
+  if(catChartInst) catChartInst.destroy();
+  catChartInst = new Chart(document.getElementById('categoryChart'),{
+    type:'bar',
+    data:{labels:catLabels,datasets:[{label:'Tasks',data:catData,
+      backgroundColor:catLabels.map(function(_,i){return catColors[i%catColors.length];}),
+      borderColor:catLabels.map(function(_,i){return catBorders[i%catBorders.length];}),
+      borderWidth:1,borderRadius:6,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return ' '+c.raw+' tasks';}}}},
+      scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{font:{size:9},maxRotation:30}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{stepSize:1,font:{size:10}},beginAtZero:true}}}
+  });
+
+  var relMap={};
+  activeTasks.forEach(function(t){
+    if(!relMap[t.rel]) relMap[t.rel]={pctSum:0,count:0};
+    relMap[t.rel].pctSum+=t.pct; relMap[t.rel].count++;
+  });
+  var relLabels=Object.keys(relMap).sort().map(function(r){return 'Release '+r;});
+  var relAvg=Object.keys(relMap).sort().map(function(r){return Math.round(relMap[r].pctSum/relMap[r].count);});
+  var relTotal=Object.keys(relMap).sort().map(function(r){return relMap[r].count;});
+  var relColors=['rgba(79,142,247,0.7)','rgba(155,89,182,0.7)','rgba(0,212,255,0.7)','rgba(255,171,64,0.7)'];
+  var relBorders=['#4f8ef7','#9b59b6','#00d4ff','#ffab40'];
+
+  if(relChartInst) relChartInst.destroy();
+  relChartInst = new Chart(document.getElementById('releaseChart'),{
+    type:'bar',
+    data:{labels:relLabels,datasets:[
+      {label:'Avg Progress %',data:relAvg,backgroundColor:relLabels.map(function(_,i){return relColors[i%relColors.length];}),borderColor:relLabels.map(function(_,i){return relBorders[i%relBorders.length];}),borderWidth:1,borderRadius:6,borderSkipped:false,yAxisID:'y'},
+      {label:'Total Tasks',data:relTotal,backgroundColor:relLabels.map(function(_,i){return relColors[i%relColors.length].replace('0.7','0.2');}),borderColor:relLabels.map(function(_,i){return relBorders[i%relBorders.length];}),borderWidth:1,borderRadius:6,borderSkipped:false,yAxisID:'y1'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:10,font:{size:10}}}},
+      scales:{x:{grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:function(v){return v+'%';},font:{size:10}},beginAtZero:true,max:100,position:'left'},
+        y1:{grid:{display:false},ticks:{stepSize:1,font:{size:10}},beginAtZero:true,position:'right'}
+      }
+    }
+  });
+}
+
+// =============================================
+// INIT
+// =============================================
+computeKPIs();
+buildReleaseCards();
+renderTable(activeTasks);
+renderBacklog();
+</script>
+</body>
+</html>

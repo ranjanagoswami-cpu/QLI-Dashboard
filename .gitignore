@@ -1,0 +1,13 @@
+﻿# Excel source files (stay local, never published)
+*.xlsx
+*.xls
+*.xlsm
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# PowerShell temp
+*.tmp
+*.log
